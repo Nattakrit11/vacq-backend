@@ -33,6 +33,16 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+
+  //---added telephone field---
+  telephone: {
+    type: String,
+    required: [true, 'Please add a phone number'],
+    match: [
+        /^[0-9]{10,15}$/,
+        'Please enter a valid phone number',
+      ],
+    },
 });
 
 //Encrypt password using bcrypt

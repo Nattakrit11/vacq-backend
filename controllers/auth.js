@@ -7,13 +7,14 @@ const User = require("../models/User");
 //Baccess Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, telephone } = req.body; // add telephone
     //Create user
     const user = await User.create({
       name,
       email,
       password,
       role,
+      telephone, // add telephone
     });
     //Create token
     // const token=user.getSignedJwtToken();
@@ -93,6 +94,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     _id: user._id,
     name: user.name,
     email: user.email,
+    telephone: user.telephone, // add telephone
     //end for frontend
     token,
   });

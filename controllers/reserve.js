@@ -1,164 +1,133 @@
-const Ticket = require('../models/Reserve');
-const Hospital = require('../models/Hospital');
+const Reserve = require("../models/Reserve");
 
-// @desc    Get all tickets
-// @route   GET /api/v1/tickets
-// @access  Private
-exports.getTickets = async (req, res, next) => {
-    let query;
-
-    // General users can see only their tickets
-    if (req.user.role !== 'admin') {
-        query = Ticket.find({ user: req.user.id }).populate({
-            path: 'hospital',
-            select: 'name province tel'
-        });
-    } else {
-        // If admin, can see all tickets or filter by hospital
-        if (req.params.hospitalId) {
-            query = Ticket.find({ hospital: req.params.hospitalId }).populate({
-                path: 'hospital',
-                select: 'name province tel'
-            });
-        } else {
-            query = Ticket.find().populate({
-                path: 'hospital',
-                select: 'name province tel'
-            });
-        }
-    }
-
-    try {
-        const tickets = await query;
-
-        res.status(200).json({
-            success: true,
-            count: tickets.length,
-            data: tickets
-        });
-    } catch (error) {
-        console.log(error.stack);
-        return res.status(500).json({ success: false, message: "Cannot find Tickets" });
-    }
+// @desc    Get all reserve shops
+// @route   GET /api/v1/reserve
+// @access  Public
+exports.getReserve = async (req, res, next) => {
+  try {
+    const reserves = await Reserve.find();
+    res.status(200).json({
+      success: true,
+      count: reserves.length,
+      data: reserves,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: "Cannot get reserve data",
+    });
+  }
 };
 
-// @desc    Get single ticket
-// @route   GET /api/v1/tickets/:id
-// @access  Private
-exports.getTicket = async (req, res, next) => {
-    try {
-        const ticket = await Ticket.findById(req.params.id).populate({
-            path: 'hospital',
-            select: 'name description tel'
-        });
+// @desc    Get a single reserve shop by ID
+// @route   GET /api/v1/reserve/:id
+// @access  Public
+exports.getReserveById = async (req, res, next) => {
+  try {
+    const reserve = await Reserve.findById(req.params.id);
 
-        if (!ticket) {
-            return res.status(404).json({ success: false, message: `No ticket with the id of ${req.params.id}` });
-        }
-
-        // Make sure user is the ticket owner or admin
-        if (ticket.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({ success: false, message: 'Not authorized to access this ticket' });
-        }
-
-        res.status(200).json({
-            success: true,
-            data: ticket
-        });
-    } catch (error) {
-        console.log(error.stack);
-        return res.status(500).json({ success: false, message: "Cannot find Ticket" });
+    if (!reserve) {
+      return res.status(404).json({
+        success: false,
+        message: `No reserve shop found with the id of ${req.params.id}`,
+      });
     }
+
+    res.status(200).json({
+      success: true,
+      data: reserve,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
 };
 
-// @desc    Create new ticket
-// @route   POST /api/v1/hospitals/:hospitalId/tickets
-// @access  Private
-exports.addTicket = async (req, res, next) => {
-    try {
-        req.body.hospital = req.params.hospitalId;
-        const hospital = await Hospital.findById(req.params.hospitalId);
+// @desc    Create a new reserve shop
+// @route   POST /api/v1/reserve
+// @access  Public
+exports.createReserve = async (req, res, next) => {
+  const { name, address, telephone, hours } = req.body;
 
-        if (!hospital) {
-            return res.status(404).json({ success: false, message: `No hospital with the id of ${req.params.hospitalId}` });
-        }
+  try {
+    const reserve = await Reserve.create({
+      name,
+      address,
+      telephone,
+      hours,
+    });
 
-        // Add user ID to request body
-        req.body.user = req.user.id;
-
-        const ticket = await Ticket.create(req.body);
-
-        res.status(201).json({
-            success: true,
-            data: ticket
-        });
-    } catch (error) {
-        console.log(error.stack);
-        return res.status(500).json({ success: false, message: "Cannot create Ticket" });
-    }
+    res.status(201).json({
+      success: true,
+      data: reserve,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: "Cannot create reserve shop",
+    });
+  }
 };
 
-// @desc    Update ticket
-// @route   PUT /api/v1/tickets/:id
-// @access  Private
-exports.updateTicket = async (req, res, next) => {
-    try {
-        let ticket = await Ticket.findById(req.params.id);
+// @desc    Update a reserve shop by ID
+// @route   PUT /api/v1/reserve/:id
+// @access  Private (only admin or owner can update)
+exports.updateReserve = async (req, res, next) => {
+  try {
+    let reserve = await Reserve.findById(req.params.id);
 
-        if (!ticket) {
-            return res.status(404).json({ success: false, message: `No ticket with the id of ${req.params.id}` });
-        }
-
-        // Make sure user is the ticket owner or admin
-        if (ticket.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({
-                success: false, 
-                message: `User ${req.user.id} is not authorized to update this ticket`
-            });
-        }
-
-        ticket = await Ticket.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true
-        });
-
-        res.status(200).json({
-            success: true,
-            data: ticket
-        });
-    } catch (error) {
-        console.log(error.stack);
-        return res.status(500).json({ success: false, message: "Cannot update Ticket" });
+    if (!reserve) {
+      return res.status(404).json({
+        success: false,
+        message: `No reserve shop found with the id of ${req.params.id}`,
+      });
     }
+
+    // Update the reserve shop
+    reserve = await Reserve.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: reserve,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Cannot update reserve shop",
+    });
+  }
 };
 
-// @desc    Delete ticket
-// @route   DELETE /api/v1/tickets/:id
-// @access  Private
-exports.deleteTicket = async (req, res, next) => {
-    try {
-        const ticket = await Ticket.findById(req.params.id);
+// @desc    Delete a reserve shop by ID
+// @route   DELETE /api/v1/reserve/:id
+// @access  Private (only admin or owner can delete)
+exports.deleteReserve = async (req, res, next) => {
+  try {
+    const reserve = await Reserve.findById(req.params.id);
 
-        if (!ticket) {
-            return res.status(404).json({ success: false, message: `No ticket with the id of ${req.params.id}` });
-        }
-
-        // Make sure user is the ticket owner or admin
-        if (ticket.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({
-                success: false,
-                message: `User ${req.user.id} is not authorized to delete this ticket`
-            });
-        }
-
-        await ticket.deleteOne();
-
-        res.status(200).json({
-            success: true,
-            data: {}
-        });
-    } catch (error) {
-        console.log(error.stack);
-        return res.status(500).json({ success: false, message: "Cannot delete Ticket" });
+    if (!reserve) {
+      return res.status(404).json({
+        success: false,
+        message: `No reserve shop found with the id of ${req.params.id}`,
+      });
     }
+
+    // Delete the reserve shop
+    await reserve.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      data: {},
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Cannot delete reserve shop",
+    });
+  }
 };

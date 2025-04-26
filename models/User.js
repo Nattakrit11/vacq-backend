@@ -27,6 +27,19 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     select: false,
   },
+  
+
+  //---added telephone field---
+  telephone: {
+    type: String,
+    required: [true, 'Please add a phone number'],
+    unique: true,
+    match: [
+      /^[0-9]{10}$/,
+      'Please enter a valid phone number',
+      ],
+    },
+
   resetPasswordToken: String,
   resetPasswordExpire: Date,
   createdAt: {
@@ -34,15 +47,7 @@ const UserSchema = new mongoose.Schema({
     default: Date.now,
   },
 
-  //---added telephone field---
-  telephone: {
-    type: String,
-    required: [true, 'Please add a phone number'],
-    match: [
-        /^[0-9]{10,15}$/,
-        'Please enter a valid phone number',
-      ],
-    },
+  
 });
 
 //Encrypt password using bcrypt

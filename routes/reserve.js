@@ -1,16 +1,23 @@
 const express = require('express');
-const {getTickets, getTicket, addTicket, updateTicket, deleteTicket} = require('../controllers/reserve');
+const { 
+  createReserve, 
+  getReserve, 
+  getReserveById, 
+  updateReserve, 
+  deleteReserve 
+} = require('../controllers/reserve');
 
-const router = express.Router({mergeParams:true});
-const {protect, authorize} = require('../middleware/auth');
+const router = express.Router();
+
+const { protect, authorize } = require('../middleware/auth');
 
 router.route('/')
-    .get(protect, getTickets)
-    .post(protect, authorize('admin', 'user'), addTicket);
+  .get(getReserve)
+  .post(protect, authorize('admin'), createReserve);
 
 router.route('/:id')
-    .get(protect, getTicket)
-    .put(protect, authorize('admin', 'user'), updateTicket)
-    .delete(protect, authorize('admin', 'user'), deleteTicket);
+  .get(getReserveById)
+  .put(protect, authorize('admin', 'user'), updateReserve)
+  .delete(protect, authorize('admin', 'user'), deleteReserve);
 
 module.exports = router;

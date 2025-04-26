@@ -8,6 +8,13 @@ const User = require("../models/User");
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role, telephone } = req.body; // add telephone
+
+    // if (!name || !email || !password || !telephone) {
+    //   return res
+    //     .status(400)
+    //     .json({ success: false, msg: "Please provide name, email, password, telephone" });
+    // }
+
     //Create user
     const user = await User.create({
       name,
@@ -19,6 +26,7 @@ exports.register = async (req, res, next) => {
     //Create token
     // const token=user.getSignedJwtToken();
     // res.status(200).json({success:true,token});
+    console.log(req.body)
     sendTokenResponse(user, 200, res);
   } catch (err) {
     res.status(400).json({ success: false });
